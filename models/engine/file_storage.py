@@ -11,6 +11,7 @@ from models.place import Place
 from models.review import Review
 from models.state import State
 from models.user import User
+import models
 
 classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
            "Place": Place, "Review": Review, "State": State, "User": User}
@@ -44,7 +45,7 @@ class FileStorage:
         """serializes __objects to the JSON file (path: __file_path)"""
         json_objects = {}
         for key in self.__objects:
-            json_objects[key] = self.__objects[key].to_dict(dump="Yes")
+            json_objects[key] = self.__objects[key].to_dict()
         with open(self.__file_path, 'w') as f:
             json.dump(json_objects, f)
 
@@ -70,24 +71,15 @@ class FileStorage:
         self.reload()
 
     def get(self, cls, id):
-        """
-        Returns the object based on the class name and its ID, or None if not
-        found
-        """
-        key = "{}.{}".format(cls, id)
-        if key in self.__objects.keys():
-            return self.__objects[key]
+        """retrieve one object"""
+        if cls not in classes.values():
+            return None
+        all_data = models.storage.all(cls)
+        key_data = "{}.{}".format(cls.__name__, id)
+        if key_data in all_data:
+            return all_data.get(key_data)
         return None
 
     def count(self, cls=None):
-        """
-        Returns the number of objects in storage matching the given class name.
-        If no name is passed, returns the count of all objects in storage.
-        """
-        if cls:
-            counter = 0
-            for obj in self.__objects.values():
-                if obj.__class__.__name__ == cls:
-                    counter += 1
-            return counter
-        return len(self.__objects)
+        """count the number of objects in storage"""
+        return len(self.all(cls)) if cls else len(self.all())
